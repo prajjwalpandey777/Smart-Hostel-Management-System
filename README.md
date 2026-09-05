@@ -1,96 +1,203 @@
 # Smart Hostel Management System
 
-A standalone Java Swing desktop application for managing the day-to-day operations of a college hostel. It provides a single-window workspace for student records, rooms, fees, complaints, visitors, attendance, mess planning, outpasses, inventory, notices, staff, reports, and settings.
+<div align="center">
 
-## Problem statement
+### Modern Java Swing desktop software for college hostel operations
 
-Hostel administration often relies on spreadsheets, registers, and disconnected records. This makes room assignment, fee tracking, visitor security, complaint follow-up, and attendance monitoring slow and error-prone. Smart Hostel Management System centralizes these workflows in one local desktop application.
+![Java](https://img.shields.io/badge/Java-8%2B-1f6feb?style=for-the-badge&logo=openjdk&logoColor=white)
+![Desktop](https://img.shields.io/badge/Platform-Windows%20Desktop-2ea44f?style=for-the-badge)
+![UI](https://img.shields.io/badge/UI-Java%20Swing-8250df?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Academic%20Project-f59e0b?style=for-the-badge)
 
-## Objectives
+</div>
 
-- Maintain accurate hostel records through an easy-to-use desktop interface.
-- Reduce manual effort in student, room, fee, visitor, and attendance management.
-- Demonstrate core Programming in Java concepts in a meaningful real-world application.
-- Support validation, live CRUD operations, reports, file export, logging, and JDBC-ready database access.
+> One standalone application to manage students, rooms, fees, visitors, attendance, complaints, mess operations, outpasses, inventory, notices, staff, and reports.
 
-## Target users
+## At a glance
+
+| Purpose | Interface | Modules | Course alignment |
+|---|---|---|---|
+| Digitize hostel administration | Single-window Java desktop app | 13 operational modules | OOP, collections, threads, I/O, exceptions, JDBC |
+
+<details>
+<summary><strong>Contents</strong></summary>
+
+- [Problem statement](#problem-statement)
+- [Objectives](#objectives)
+- [Features](#features)
+- [Technology and Java concepts](#technology-and-java-concepts)
+- [Architecture](#architecture)
+- [Installation and running](#installation-and-running)
+- [Testing](#testing)
+- [Database design](#database-design)
+- [Future enhancements](#future-enhancements)
+
+</details>
+
+## ⚠️ Problem statement
+
+Hostel administration can become difficult when student details, room availability, fee records, visitor logs, complaints, and attendance are maintained in separate registers or spreadsheets. This project centralizes these operations in a simple, maintainable desktop application.
+
+## 🎯 Objectives
+
+- Maintain accurate hostel records through one local desktop application.
+- Make daily hostel workflows faster through search, validation, reporting, and export.
+- Apply Programming in Java syllabus concepts to a real-world business problem.
+- Provide a clean foundation for future MySQL persistence.
+
+## 👥 Target users
 
 - Hostel warden and assistant warden
-- Hostel office staff
-- Security staff
-- Mess and maintenance staff
+- Hostel office and security staff
+- Mess, maintenance, and inventory staff
 - College administrators
 
-## Major modules and features
+## ✨ Features
 
-### 1. Student and room administration
+| Area | Included capabilities |
+|---|---|
+| 🎓 **Students** | Add, edit, delete, search, view profile, load sample students, assign room |
+| 🛏️ **Rooms** | Capacity, occupancy, available beds, status, auto-allocation |
+| 💳 **Fees** | Fee collection, paid/pending tracking, receipt preview, CSV export |
+| 🛠️ **Complaints** | Register, assign to teams, update status, resolved tracking |
+| 👤 **Visitors** | Entry/exit time, visitor pass preview, live status |
+| 🕒 **Attendance** | Present/absent/late status, entry and exit time, late-entry report |
+| 🍽️ **Operations** | Mess plans, outpass approvals, inventory and low-stock alerts |
+| ⚙️ **Administration** | Notices, staff, reports, backup controls, theme and settings |
+| 📊 **Dashboard** | Hostel statistics, custom charts, activities, quick actions, visitor overview |
 
-- Add, edit, search, delete, and view student records.
-- Maintain student ID, course, room, phone number, and status.
-- Add and manage room capacity, occupancy, available beds, and status.
-- Automatically allocate a student to a room with an available bed.
-- Load sample student records for demonstration and testing.
-
-### 2. Fees, complaints, visitors, and attendance
-
-- Collect fees and track paid or pending fee status.
-- Generate a receipt preview for fee payments.
-- Register, assign, update, and track complaint status.
-- Record visitor entry and exit times; display a visitor-pass preview.
-- Mark attendance with entry time, exit time, and late-entry status.
-
-### 3. Hostel operations and communication
-
-- Manage mess menu and meal plans.
-- Create and approve leave/outpass requests.
-- Track inventory, reorder levels, and low-stock status.
-- Publish, search, and manage notices.
-- Add and manage staff records.
-- Generate CSV exports and operational reports.
-
-### 4. Dashboard and administration
-
-- Dashboard with hostel metrics, charts, recent activities, and visitor overview.
-- Fixed Smart Hostel sidebar with scrollable module navigation.
-- Dark professional Swing interface with accessible scrolling and validation.
-- Settings for password, JDBC connection details, backup/restore controls, theme, and syllabus concept demo.
-
-## Functional requirements
+## ✅ Functional requirements
 
 | ID | Requirement |
 |---|---|
-| FR-01 | The system shall allow users to add, edit, delete, search, and export module records. |
-| FR-02 | The system shall manage students, rooms, fees, complaints, visitors, attendance, notices, staff, mess plans, outpasses, and inventory. |
-| FR-03 | The system shall validate required form fields before saving a record. |
-| FR-04 | The system shall generate receipt and visitor-pass previews. |
-| FR-05 | The system shall export current table data to CSV files. |
-| FR-06 | The system shall provide JDBC connection, query, and update abstractions for MySQL integration. |
+| FR-01 | Add, edit, delete, search, and export management records. |
+| FR-02 | Manage students, rooms, fees, complaints, visitors, attendance, mess, outpasses, inventory, notices, and staff. |
+| FR-03 | Validate required fields before saving records. |
+| FR-04 | Generate receipt and visitor-pass previews. |
+| FR-05 | Export live records to CSV. |
+| FR-06 | Support JDBC-ready MySQL connection, query, and update operations. |
 
-## Non-functional requirements
+## 🧩 Non-functional requirements
 
 | Area | Requirement |
 |---|---|
-| Usability | The application uses a single-window Swing interface with consistent navigation, visible scrollbars, and clear validation messages. |
-| Reliability | Exceptions are handled for validation, file I/O, and JDBC operations; data actions require confirmation where appropriate. |
-| Maintainability | The source is organized into focused nested domain, repository, database, file-service, UI, and utility classes. |
-| Performance | Tables use `TableRowSorter` for responsive in-memory filtering; a lightweight background thread avoids blocking the UI. |
-| Security | Password and connection controls are isolated in Settings; production deployment should use hashed passwords and protected database credentials. |
-| Logging | A synchronized singleton audit log records selected application actions. |
+| Usability | Single-window Swing navigation, visible scrollbars, focus-clearing input hints, and clear validation. |
+| Reliability | Exception handling for validation, file I/O, and JDBC; destructive actions require confirmation. |
+| Maintainability | Modular domain, repository, database, file-service, and UI classes in one source file. |
+| Performance | In-memory tables use responsive filtering; lightweight background work avoids UI blocking. |
+| Security | Settings isolate credentials; production use should add password hashing and protected database credentials. |
+| Logging | A synchronized singleton audit log records application actions. |
 
-## Technologies and Java concepts used
+## 💻 Technology and Java concepts
 
-- **Java Swing**: `JFrame`, `JPanel`, `CardLayout`, `JTable`, `JScrollPane`, `JOptionPane`, and form controls.
-- **Java Collections**: `ArrayList`, `Vector`, `Stack`, `Map`, `LinkedHashMap`, and generics.
-- **OOP**: classes, objects, constructors, encapsulation, inheritance, abstraction, interfaces, method overriding, polymorphism, enums, nested classes, and singleton pattern.
-- **Error handling**: custom checked exception, validation, `try/catch`, multi-catch, `throws`, `SQLException`, and `IOException`.
-- **Multithreading**: a daemon `DashboardClock` thread and synchronized audit logging.
-- **I/O streams**: character streams for CSV export/text reading and byte streams for backup copying.
-- **JDBC**: `Connection`, `Statement`, `ResultSet`, query, update, and close methods ready for MySQL configuration.
-- **Reflection and annotations**: Java reflection and a custom runtime annotation for syllabus-concept examples.
+- **Java Swing:** `JFrame`, `JPanel`, `CardLayout`, `JTable`, `JScrollPane`, `JOptionPane`, form components.
+- **OOP:** classes, objects, constructors, encapsulation, inheritance, abstraction, interfaces, polymorphism, enums, nested classes, singleton.
+- **Collections:** `ArrayList`, `Vector`, `Stack`, `Map`, `LinkedHashMap`, generics.
+- **Exceptions:** custom validation exception, `try/catch`, multi-catch, `throws`, `IOException`, `SQLException`.
+- **Multithreading:** daemon dashboard clock and synchronized audit logging.
+- **File I/O:** CSV export, character streams, and byte-stream backup copying.
+- **JDBC:** database connection, query, update, result processing, and close methods.
+- **Advanced concepts:** arrays, recursion, annotations, reflection, anonymous classes, and runtime polymorphism.
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TD
-    U[Hostel Administrator] --> UI[Java Swing UI]
+    U[Hostel Administrator] --> UI[Java Swing User Interface]
     UI --> NAV[CardLayout Navigation]
+    NAV --> MOD[Hostel Management Modules]
+    MOD --> MODEL[Domain Models and Collections]
+    MOD --> FILE[CSV and File Services]
+    MOD --> DB[JDBC Database Manager]
+    DB --> MYSQL[(MySQL Database)]
+    UI --> LOG[Synchronized Audit Log]
+```
+
+## 🔄 Workflow
+
+```mermaid
+flowchart LR
+    A[Start application] --> B[Login]
+    B --> C[Dashboard]
+    C --> D[Choose module]
+    D --> E{Action}
+    E -->|Add or edit| F[Validate form]
+    F --> G[Update live table]
+    E -->|Delete| H[Confirm deletion]
+    E -->|Search| I[Filter table]
+    E -->|Export| J[Create CSV]
+```
+
+## 🚀 Installation and running
+
+### Prerequisites 📋
+
+- JDK 8 or later on Windows.
+- Optional: MySQL Server and MySQL Connector/J for permanent database storage.
+
+### Run ▶️
+
+Open PowerShell in the folder containing `Main.java`, then run:
+
+```powershell
+javac -encoding UTF-8 Main.java
+java Main
+```
+
+Demo login:
+
+```text
+Email: admin@hostel.com
+Password: admin
+```
+
+## 🧪 Testing
+
+1. Open **Students** and confirm sample students are visible.
+2. Add a student, then edit and delete the selected record.
+3. Search by student name and confirm table filtering works.
+4. Export a module and verify the generated CSV contains current records.
+5. Test **Auto Allocate** from Rooms.
+6. Test fee receipt and visitor pass preview actions.
+7. Check dashboard, tables, and sidebar scrollbars after resizing the window.
+8. Open **Settings → Syllabus Concepts** to inspect executable Java concept examples.
+
+## 🗄️ Database design
+
+The current version stores editable records in memory for the running session and can export them as CSV. `DatabaseManager` is ready for MySQL integration.
+
+| Table | Typical fields |
+|---|---|
+| `students` | student_id, name, course, room_no, phone, status |
+| `rooms` | room_no, block, capacity, occupied, available, status |
+| `payments` | receipt_no, student_id, amount, payment_mode, payment_date, status |
+| `complaints` | ticket_no, student_id, subject, assigned_to, status |
+| `visitors` | pass_no, visitor_name, student_id, entry_time, exit_time |
+| `attendance` | attendance_id, student_id, attendance_date, entry_time, exit_time, status |
+
+## ⚠️ Current limitations
+
+- Data resets when the application closes unless exported to CSV.
+- Permanent storage needs a configured MySQL server and JDBC driver.
+- Production deployment should add authentication, hashed passwords, and role-based access control.
+
+## 🔮 Future enhancements
+
+- Complete MySQL CRUD persistence for every module.
+- Secure user roles and password hashing.
+- PDF reports and printing.
+- Email/SMS notifications for fees, complaints, and outpasses.
+- QR visitor passes and biometric attendance integration.
+- Scheduled backups and audit-report downloads.
+
+## 📁 Repository contents
+
+```text
+outputs/
+├── Main.java     # Standalone Java Swing application
+└── README.md     # Project documentation
+```
+
+## 📄 License
+
+Academic project for the Programming in Java course.
