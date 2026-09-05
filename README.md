@@ -102,30 +102,38 @@ Hostel administration can become difficult when student details, room availabili
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-    U[Hostel Administrator] --> UI[Java Swing User Interface]
+flowchart TD
+    U([Hostel Administrator]) --> UI[Java Swing User Interface]
     UI --> NAV[CardLayout Navigation]
     NAV --> MOD[Hostel Management Modules]
     MOD --> MODEL[Domain Models and Collections]
-    MOD --> FILE[CSV and File Services]
-    MOD --> DB[JDBC Database Manager]
+    MOD --> SERVICE[Application Services]
+    SERVICE --> FILE[CSV and File Services]
+    SERVICE --> DB[JDBC Database Manager]
     DB --> MYSQL[(MySQL Database)]
-    UI --> LOG[Synchronized Audit Log]
+    SERVICE --> LOG[(Synchronized Audit Log)]
 ```
 
 ## 🔄 Workflow
 
 ```mermaid
-flowchart LR
-    A[Start application] --> B[Login]
-    B --> C[Dashboard]
-    C --> D[Choose module]
-    D --> E{Action}
-    E -->|Add or edit| F[Validate form]
-    F --> G[Update live table]
-    E -->|Delete| H[Confirm deletion]
-    E -->|Search| I[Filter table]
-    E -->|Export| J[Create CSV]
+flowchart TD
+    A([Start Application]) --> B[Login]
+    B --> C[Open Dashboard]
+    C --> D[Choose Management Module]
+    D --> E{Select Action}
+    E -->|Add / Edit| F[Enter Record Details]
+    F --> G{Validation Successful?}
+    G -->|Yes| H[Save to Live Table]
+    G -->|No| I[Show Validation Message]
+    I --> F
+    E -->|Delete| J[Confirm Deletion]
+    J --> H
+    E -->|Search| K[Filter Current Table]
+    E -->|Export| L[Generate CSV File]
+    H --> M([Return to Module])
+    K --> M
+    L --> M
 ```
 
 ## 🚀 Installation and running
