@@ -101,7 +101,7 @@ Hostel administration can become difficult when student details, room availabili
 
 ## 🏗️ Architecture
 
-```
+```mermaid
 flowchart LR
     U[Hostel Administrator] --> UI[Java Swing User Interface]
     UI --> NAV[CardLayout Navigation]
@@ -115,7 +115,7 @@ flowchart LR
 
 ## 🔄 Workflow
 
-```
+```mermaid
 flowchart LR
     A[Start application] --> B[Login]
     B --> C[Dashboard]
