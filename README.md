@@ -196,8 +196,3 @@ The current version stores editable records in memory for the running session an
 outputs/
 ├── Main.java     # Standalone Java Swing application
 └── README.md     # Project documentation
-```
-
-## 📄 License
-
-Academic project for the Programming in Java course.
