@@ -27,6 +27,7 @@
 - [Features](#features)
 - [Technology and Java concepts](#technology-and-java-concepts)
 - [Architecture](#architecture)
+- [Screenshots](#screenshots)
 - [Installation and running](#installation-and-running)
 - [Testing](#testing)
 - [Database design](#database-design)
@@ -135,6 +136,32 @@ flowchart TD
     K --> M
     L --> M
 ```
+
+## 📸 Screenshots
+
+### How to add your screenshots
+
+1. Run the project using `java Main`.
+2. Take a screenshot using **Windows + Shift + S** and save it as a `.png` file.
+3. Put the image in the `screenshots` folder.
+4. Use these exact names: `login.png`, `dashboard.png`, `students.png`, and `fees.png`.
+5. If using GitHub in a browser, open the `screenshots` folder, choose **Add file → Upload files**, select your PNG images, then commit the changes.
+
+### Screenshot gallery
+
+After adding the files, remove the `<!--` and `-->` lines below to show the images in this README.
+
+<!--
+| Login | Dashboard |
+|---|---|
+| ![Login screen](screenshots/login.png) | ![Dashboard screen](screenshots/dashboard.png) |
+
+| Student Management | Fee Management |
+|---|---|
+| ![Student management screen](screenshots/students.png) | ![Fee management screen](screenshots/fees.png) |
+-->
+
+> Your screenshot folder is already included in this project: `outputs/screenshots/`.
 
 ## 🚀 Installation and running
 
