@@ -3,6 +3,7 @@ import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.Arc2D;
 import java.io.*;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -52,6 +53,9 @@ public class Main {
     static final Color COLOR_SURFACE = new Color(29, 42, 66);
     static final Color COLOR_SURFACE_LIGHT = new Color(37, 52, 78);
     static final Color COLOR_ACCENT = new Color(39, 201, 160);
+    static final Color COLOR_BLUE = new Color(76, 139, 245);
+    static final Color COLOR_WARNING = new Color(244, 178, 62);
+    static final Color COLOR_DANGER = new Color(239, 92, 105);
     static final Color COLOR_TEXT = new Color(235, 241, 250);
     static final Color COLOR_MUTED = new Color(154, 173, 201);
     static final Color COLOR_BORDER = new Color(67, 85, 115);
@@ -178,9 +182,21 @@ public class Main {
         root.add(buildTopBar(), BorderLayout.NORTH);
         contentPanel.setBackground(COLOR_BACKGROUND);
 
-        // UNIT 1: a simple for-each loop builds one card-layout page per module.
+        // Build every entity module (Students, Rooms, Fees, ...) first so their table
+        // models are already filled with data by the time the Dashboard reads them.
+        Map<String, JComponent> builtPages = new LinkedHashMap<>();
+        for (String moduleName : moduleNames()) {
+            builtPages.put(moduleName, buildEntityPage(moduleName));
+        }
+        // Now build the special pages, which may summarise data from the modules above.
+        builtPages.put("Dashboard", buildDashboardPage());
+        builtPages.put("Reports", buildReportsPage());
+        builtPages.put("Settings", buildSettingsPage());
+        builtPages.put("About", buildAboutPage());
+
+        // UNIT 1: a simple for-each loop adds every page to the card layout, in nav order.
         for (String pageName : PAGE_NAMES) {
-            contentPanel.add(buildPage(pageName), pageName);
+            contentPanel.add(builtPages.get(pageName), pageName);
         }
         root.add(contentPanel, BorderLayout.CENTER);
 
@@ -270,34 +286,230 @@ public class Main {
     // a single parametrised method rather than copy-pasting the same code many times.
     // =====================================================================================
 
-    private JComponent buildPage(String pageName) {
-        switch (pageName) {
-            case "Dashboard":
-                return buildDashboardPage();
-            case "Reports":
-                return buildReportsPage();
-            case "Settings":
-                return buildSettingsPage();
-            case "About":
-                return buildAboutPage();
-            default:
-                return buildEntityPage(pageName);
+    // The dashboard's inner content panel is kept as a field so a "Refresh" button
+    // can rebuild the stat cards and charts after records are added or removed.
+    private final JPanel dashboardContent = new JPanel();
+
+    private JComponent buildDashboardPage() {
+        dashboardContent.setBackground(COLOR_BACKGROUND);
+        dashboardContent.setLayout(new BoxLayout(dashboardContent, BoxLayout.Y_AXIS));
+        dashboardContent.setBorder(new EmptyBorder(10, 28, 25, 28));
+        refreshDashboardContent();
+        return wrapInScrollPane(dashboardContent);
+    }
+
+    /** Clears and rebuilds every stat card and chart from the current table data. */
+    private void refreshDashboardContent() {
+        dashboardContent.removeAll();
+
+        JPanel headerRow = new JPanel(new BorderLayout());
+        headerRow.setOpaque(false);
+        headerRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        JLabel heading = makeLabel("Overview of your hostel today", 14, COLOR_MUTED);
+        headerRow.add(heading, BorderLayout.WEST);
+        JButton refreshButton = createButton("Refresh", COLOR_SURFACE_LIGHT);
+        refreshButton.addActionListener(event -> refreshDashboardContent());
+        headerRow.add(refreshButton, BorderLayout.EAST);
+        dashboardContent.add(headerRow);
+        dashboardContent.add(Box.createVerticalStrut(16));
+
+        JPanel statsRow = buildStatCardsRow();
+        statsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dashboardContent.add(statsRow);
+        dashboardContent.add(Box.createVerticalStrut(20));
+
+        JPanel chartsRow = new JPanel(new GridLayout(1, 2, 20, 0));
+        chartsRow.setOpaque(false);
+        chartsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        chartsRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
+        chartsRow.add(buildRoomOccupancyChartCard());
+        chartsRow.add(buildComplaintStatusChartCard());
+        dashboardContent.add(chartsRow);
+        dashboardContent.add(Box.createVerticalStrut(20));
+
+        JComponent feeTrendCard = buildFeeTrendChartCard();
+        feeTrendCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dashboardContent.add(feeTrendCard);
+        dashboardContent.add(Box.createVerticalStrut(20));
+
+        JComponent activityCard = buildRecentActivityCard();
+        activityCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dashboardContent.add(activityCard);
+
+        dashboardContent.revalidate();
+        dashboardContent.repaint();
+    }
+
+    // ---------------------------------------------------------------------------
+    // UNIT 4 (arrays/collections) + UNIT 1 (loops/arithmetic operators): the stat
+    // cards and charts below all read live numbers out of the table models by
+    // looping over the rows and totalling up values with simple operators.
+    // ---------------------------------------------------------------------------
+
+    private JPanel buildStatCardsRow() {
+        DefaultTableModel students = tableModels.get("Students");
+        DefaultTableModel rooms = tableModels.get("Rooms");
+        DefaultTableModel fees = tableModels.get("Fees");
+        DefaultTableModel complaints = tableModels.get("Complaints");
+
+        int totalStudents = students == null ? 0 : students.getRowCount();
+
+        int occupiedBeds = 0;
+        int totalCapacity = 0;
+        if (rooms != null) {
+            for (int row = 0; row < rooms.getRowCount(); row++) {
+                totalCapacity += parseIntSafe(String.valueOf(rooms.getValueAt(row, 2))); // Capacity
+                occupiedBeds += parseIntSafe(String.valueOf(rooms.getValueAt(row, 3)));  // Occupied
+            }
+        }
+
+        double feesCollected = 0;
+        if (fees != null) {
+            for (int row = 0; row < fees.getRowCount(); row++) {
+                String status = String.valueOf(fees.getValueAt(row, 5)); // Status
+                if (status.equalsIgnoreCase("Paid")) {
+                    feesCollected += parseAmountSafe(String.valueOf(fees.getValueAt(row, 2))); // Amount
+                }
+            }
+        }
+
+        int openComplaints = 0;
+        if (complaints != null) {
+            for (int row = 0; row < complaints.getRowCount(); row++) {
+                String status = String.valueOf(complaints.getValueAt(row, 4)); // Status
+                if (!status.equalsIgnoreCase("Resolved")) {
+                    openComplaints++;
+                }
+            }
+        }
+
+        JPanel row = new JPanel(new GridLayout(1, 4, 16, 0));
+        row.setOpaque(false);
+        row.add(buildStatCard("Total Students", String.valueOf(totalStudents), COLOR_BLUE));
+        row.add(buildStatCard("Beds Occupied", occupiedBeds + " / " + totalCapacity, COLOR_ACCENT));
+        row.add(buildStatCard("Fees Collected", "Rs. " + Math.round(feesCollected), COLOR_WARNING));
+        row.add(buildStatCard("Open Complaints", String.valueOf(openComplaints), COLOR_DANGER));
+        return row;
+    }
+
+    private JPanel buildStatCard(String title, String value, Color accentColor) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(COLOR_SURFACE);
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_SURFACE_LIGHT, 1, true), new EmptyBorder(16, 18, 16, 18)));
+
+        JLabel valueLabel = makeLabel(value, 24, accentColor);
+        JLabel titleLabel = makeLabel(title, 13, COLOR_MUTED);
+        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        card.add(valueLabel);
+        card.add(Box.createVerticalStrut(4));
+        card.add(titleLabel);
+        return card;
+    }
+
+    private JComponent buildRoomOccupancyChartCard() {
+        DefaultTableModel rooms = tableModels.get("Rooms");
+        List<String> labels = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+        if (rooms != null) {
+            for (int row = 0; row < rooms.getRowCount(); row++) {
+                labels.add(String.valueOf(rooms.getValueAt(row, 0)));                       // Room No.
+                values.add((double) parseIntSafe(String.valueOf(rooms.getValueAt(row, 3)))); // Occupied
+            }
+        }
+        BarChartPanel chart = new BarChartPanel(labels, values, COLOR_ACCENT);
+        return wrapChartInCard("Room occupancy", chart);
+    }
+
+    private JComponent buildComplaintStatusChartCard() {
+        DefaultTableModel complaints = tableModels.get("Complaints");
+        // UNIT 4: LinkedHashMap keeps categories in first-seen order while counting them.
+        Map<String, Integer> countsByStatus = new LinkedHashMap<>();
+        if (complaints != null) {
+            for (int row = 0; row < complaints.getRowCount(); row++) {
+                String status = String.valueOf(complaints.getValueAt(row, 4));
+                countsByStatus.merge(status, 1, Integer::sum);
+            }
+        }
+        PieChartPanel chart = new PieChartPanel(countsByStatus);
+        return wrapChartInCard("Complaints by status", chart);
+    }
+
+    private JComponent buildFeeTrendChartCard() {
+        DefaultTableModel fees = tableModels.get("Fees");
+        List<String> labels = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+        if (fees != null) {
+            for (int row = 0; row < fees.getRowCount(); row++) {
+                labels.add(String.valueOf(fees.getValueAt(row, 0)));                        // Receipt
+                values.add(parseAmountSafe(String.valueOf(fees.getValueAt(row, 2))));        // Amount
+            }
+        }
+        LineChartPanel chart = new LineChartPanel(labels, values, COLOR_BLUE);
+        JComponent card = wrapChartInCard("Fee collection trend", chart);
+        card.setPreferredSize(new Dimension(0, 220));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 220));
+        return card;
+    }
+
+    private JComponent buildRecentActivityCard() {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(COLOR_SURFACE);
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_SURFACE_LIGHT, 1, true), new EmptyBorder(16, 18, 16, 18)));
+
+        JLabel title = makeLabel("Recent activity", 15, COLOR_TEXT);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.add(title);
+        card.add(Box.createVerticalStrut(8));
+
+        List<String> entries = auditLog.entries();
+        if (entries.isEmpty()) {
+            JLabel empty = makeLabel("No activity recorded yet.", 13, COLOR_MUTED);
+            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.add(empty);
+        } else {
+            // UNIT 1: only the most recent 5 entries are shown, using a plain for loop.
+            int start = Math.max(0, entries.size() - 5);
+            for (int i = entries.size() - 1; i >= start; i--) {
+                JLabel entryLabel = makeLabel("- " + entries.get(i), 13, COLOR_MUTED);
+                entryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                card.add(entryLabel);
+            }
+        }
+        return card;
+    }
+
+    private JComponent wrapChartInCard(String title, JComponent chart) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(COLOR_SURFACE);
+        card.setBorder(new CompoundBorder(new LineBorder(COLOR_SURFACE_LIGHT, 1, true), new EmptyBorder(14, 16, 14, 16)));
+        JLabel titleLabel = makeLabel(title, 15, COLOR_TEXT);
+        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(chart, BorderLayout.CENTER);
+        return card;
+    }
+
+    /** UNIT 1: simple exception handling around number parsing (a value might not be numeric). */
+    private int parseIntSafe(String text) {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException notANumber) {
+            return 0;
         }
     }
 
-    private JComponent buildDashboardPage() {
-        JPanel page = new JPanel();
-        page.setBackground(COLOR_BACKGROUND);
-        page.setLayout(new BoxLayout(page, BoxLayout.Y_AXIS));
-        page.setBorder(new EmptyBorder(10, 28, 25, 28));
-
-        page.add(makeLabel("Students: " + dataStore.students.size(), 16, COLOR_TEXT));
-        page.add(makeLabel("Rooms: " + dataStore.rooms.size(), 16, COLOR_TEXT));
-        page.add(makeLabel("Recent activity:", 14, COLOR_MUTED));
-        for (String activity : dataStore.activities) {
-            page.add(makeLabel("- " + activity, 13, COLOR_MUTED));
+    private double parseAmountSafe(String text) {
+        try {
+            // Strip anything that is not a digit or a decimal point, e.g. "Rs." or ",".
+            String digitsOnly = text.replaceAll("[^0-9.]", "");
+            return digitsOnly.isEmpty() ? 0 : Double.parseDouble(digitsOnly);
+        } catch (NumberFormatException notANumber) {
+            return 0;
         }
-        return wrapInScrollPane(page);
     }
 
     private JComponent buildReportsPage() {
@@ -441,6 +653,7 @@ public class Main {
             String[] newRow = readAndValidateRow(fields);
             model.addRow(newRow);
             auditLog.add("Added a new record to " + moduleName);
+            refreshDashboardContent();
         } catch (ValidationException validationError) {
             // UNIT 3: a custom checked exception is caught and reported to the user.
             showError(validationError.getMessage());
@@ -470,6 +683,7 @@ public class Main {
         if (confirmAction("Delete this " + singular(moduleName).toLowerCase() + " record?")) {
             model.removeRow(modelRow);
             auditLog.add("Deleted a record from " + moduleName);
+            refreshDashboardContent();
         }
     }
 
@@ -535,51 +749,77 @@ public class Main {
                 return new String[][]{
                         {"ST-1001", "Aarav Sharma", "B.Tech CSE", "A-204", "9876543210", "Active"},
                         {"ST-1002", "Kavya Singh", "BBA", "B-108", "9876543211", "Active"},
-                        {"ST-1003", "Rahul Mehta", "B.Tech ECE", "A-112", "9876543212", "Active"}
+                        {"ST-1003", "Rahul Mehta", "B.Tech ECE", "A-112", "9876543212", "Active"},
+                        {"ST-1004", "Neha Patel", "MBA", "C-305", "9876543213", "Fee Pending"},
+                        {"ST-1005", "Arjun Nair", "BCA", "B-211", "9876543214", "Active"}
                 };
             case "Rooms":
                 return new String[][]{
                         {"A-201", "Block A", "4", "3", "1", "Available"},
                         {"A-202", "Block A", "4", "4", "0", "Full"},
-                        {"B-108", "Block B", "3", "2", "1", "Available"}
+                        {"B-108", "Block B", "3", "2", "1", "Available"},
+                        {"C-305", "Block C", "2", "1", "1", "Available"},
+                        {"D-102", "Block D", "4", "0", "4", "Maintenance"}
                 };
             case "Fees":
                 return new String[][]{
                         {"REC-0522", "Aarav Sharma", "18000", "UPI", "2026-09-05", "Paid"},
-                        {"REC-0523", "Kavya Singh", "18500", "Card", "2026-09-04", "Paid"}
+                        {"REC-0523", "Kavya Singh", "18500", "Card", "2026-09-04", "Paid"},
+                        {"REC-0524", "Rahul Mehta", "18000", "Cash", "2026-09-03", "Paid"},
+                        {"REC-0525", "Neha Patel", "9000", "-", "2026-09-01", "Pending"},
+                        {"REC-0526", "Arjun Nair", "18000", "Bank Transfer", "2026-08-30", "Paid"}
                 };
             case "Complaints":
                 return new String[][]{
                         {"CMP-104", "Aarav Sharma", "Fan not working", "Maintenance", "In Progress", "2026-09-05"},
-                        {"CMP-105", "Kavya Singh", "Water leakage", "Plumbing", "Open", "2026-09-05"}
+                        {"CMP-105", "Kavya Singh", "Water leakage", "Plumbing", "Open", "2026-09-05"},
+                        {"CMP-106", "Rahul Mehta", "Wi-Fi issue", "IT Support", "Open", "2026-09-04"},
+                        {"CMP-107", "Neha Patel", "Room cleaning", "Housekeeping", "Resolved", "2026-09-03"},
+                        {"CMP-108", "Arjun Nair", "Broken lock", "Maintenance", "Open", "2026-09-02"}
                 };
             case "Visitors":
                 return new String[][]{
-                        {"V-209", "Anita Verma", "Aarav Sharma / A-204", "10:12 AM", "-", "Inside"}
+                        {"V-209", "Anita Verma", "Aarav Sharma / A-204", "10:12 AM", "-", "Inside"},
+                        {"V-210", "Rohit Sharma", "Kavya Singh / B-108", "11:05 AM", "12:10 PM", "Exited"},
+                        {"V-211", "Meera Gupta", "Rahul Mehta / A-112", "12:20 PM", "-", "Inside"}
                 };
             case "Attendance":
                 return new String[][]{
-                        {"Aarav Sharma", "A-204", "2026-09-05", "07:48 AM", "09:10 PM", "Present"}
+                        {"Aarav Sharma", "A-204", "2026-09-05", "07:48 AM", "09:10 PM", "Present"},
+                        {"Kavya Singh", "B-108", "2026-09-05", "08:10 AM", "08:40 PM", "Late Entry"},
+                        {"Rahul Mehta", "A-112", "2026-09-05", "07:30 AM", "10:00 PM", "Present"},
+                        {"Neha Patel", "C-305", "2026-09-05", "-", "-", "Absent"},
+                        {"Arjun Nair", "B-211", "2026-09-05", "08:02 AM", "09:15 PM", "Present"}
                 };
             case "Mess & Meals":
                 return new String[][]{
-                        {"MENU-01", "Breakfast", "Poha, fruit & tea", "2026-09-05", "220", "Published"}
+                        {"MENU-01", "Breakfast", "Poha, fruit & tea", "2026-09-05", "220", "Published"},
+                        {"MENU-02", "Lunch", "Dal, rice & paneer", "2026-09-05", "235", "Published"},
+                        {"MENU-03", "Dinner", "Roti & mixed vegetables", "2026-09-05", "230", "Published"}
                 };
             case "Leave & Outpass":
                 return new String[][]{
-                        {"OUT-041", "Aarav Sharma", "2026-09-06", "2026-09-07", "Family function", "Approved"}
+                        {"OUT-041", "Aarav Sharma", "2026-09-06", "2026-09-07", "Family function", "Approved"},
+                        {"OUT-042", "Kavya Singh", "2026-09-05", "2026-09-05", "Medical appointment", "Pending"},
+                        {"OUT-043", "Rahul Mehta", "2026-09-07", "2026-09-08", "Home visit", "Approved"}
                 };
             case "Inventory":
                 return new String[][]{
-                        {"INV-101", "Mattress", "Room Furniture", "32", "10", "In Stock"}
+                        {"INV-101", "Mattress", "Room Furniture", "32", "10", "In Stock"},
+                        {"INV-102", "Study Table", "Room Furniture", "8", "10", "Reorder"},
+                        {"INV-103", "Water Dispenser", "Appliance", "5", "3", "In Stock"}
                 };
             case "Notice Board":
                 return new String[][]{
-                        {"NT-201", "Maintenance Schedule", "General", "2026-09-05", "Warden", "Active"}
+                        {"NT-201", "Maintenance Schedule", "General", "2026-09-05", "Warden", "Active"},
+                        {"NT-202", "Mess Menu Update", "Mess", "2026-09-04", "Mess Manager", "Active"},
+                        {"NT-203", "Hostel Rules Reminder", "Discipline", "2026-09-03", "Admin", "Active"}
                 };
             case "Staff":
                 return new String[][]{
-                        {"SF-001", "Ramesh Kumar", "Warden", "9876500001", "Day", "Active"}
+                        {"SF-001", "Ramesh Kumar", "Warden", "9876500001", "Day", "Active"},
+                        {"SF-002", "Sunita Devi", "Assistant Warden", "9876500002", "Evening", "Active"},
+                        {"SF-003", "Vijay Singh", "Security Guard", "9876500003", "Night", "Active"}
                 };
             default:
                 return new String[][]{};
@@ -1095,6 +1335,205 @@ public class Main {
             report.append("I/O streams: FileDataService reads and writes files with byte and character streams\n");
             report.append("JDBC: DatabaseManager wraps connect/query/update/close using java.sql\n");
             return report.toString();
+        }
+    }
+
+    // =====================================================================================
+    // DASHBOARD CHART COMPONENTS
+    // Each chart is a small custom Swing component (extends JComponent, overrides
+    // paintComponent) - the same idea as drawing shapes on a canvas, just applied to
+    // real hostel data. No external chart library is used, only java.awt.Graphics2D.
+    // =====================================================================================
+
+    /** A simple vertical bar chart: one bar per label/value pair. */
+    static class BarChartPanel extends JComponent {
+        private final List<String> labels;
+        private final List<Double> values;
+        private final Color barColor;
+
+        BarChartPanel(List<String> labels, List<Double> values, Color barColor) {
+            this.labels = labels;
+            this.values = values;
+            this.barColor = barColor;
+            setPreferredSize(new Dimension(320, 170));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (labels.isEmpty()) {
+                g2.setColor(COLOR_MUTED);
+                g2.drawString("No data yet", 10, getHeight() / 2);
+                g2.dispose();
+                return;
+            }
+
+            int width = getWidth();
+            int height = getHeight();
+            int bottomMargin = 22;
+            int chartHeight = height - bottomMargin;
+
+            // UNIT 1: a for loop finds the largest value so bars can be scaled to fit.
+            double maxValue = 1;
+            for (double value : values) {
+                if (value > maxValue) {
+                    maxValue = value;
+                }
+            }
+
+            int barCount = labels.size();
+            int gap = 14;
+            int barWidth = Math.max(18, (width - gap * (barCount + 1)) / barCount);
+
+            for (int i = 0; i < barCount; i++) {
+                double value = values.get(i);
+                int barHeight = (int) Math.round((value / maxValue) * (chartHeight - 20));
+                int x = gap + i * (barWidth + gap);
+                int y = chartHeight - barHeight;
+
+                g2.setColor(barColor);
+                g2.fillRoundRect(x, y, barWidth, barHeight, 6, 6);
+
+                g2.setColor(COLOR_TEXT);
+                String valueText = String.valueOf((int) Math.round(value));
+                g2.drawString(valueText, x + barWidth / 2 - 6, y - 4);
+
+                g2.setColor(COLOR_MUTED);
+                g2.drawString(labels.get(i), x, height - 6);
+            }
+            g2.dispose();
+        }
+    }
+
+    /** A simple line chart connecting one point per value, for showing a trend. */
+    static class LineChartPanel extends JComponent {
+        private final List<String> labels;
+        private final List<Double> values;
+        private final Color lineColor;
+
+        LineChartPanel(List<String> labels, List<Double> values, Color lineColor) {
+            this.labels = labels;
+            this.values = values;
+            this.lineColor = lineColor;
+            setPreferredSize(new Dimension(320, 150));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (values.size() < 2) {
+                g2.setColor(COLOR_MUTED);
+                g2.drawString("Not enough data for a trend line yet", 10, getHeight() / 2);
+                g2.dispose();
+                return;
+            }
+
+            int width = getWidth();
+            int height = getHeight();
+            int bottomMargin = 20;
+            int topMargin = 15;
+            int chartHeight = height - bottomMargin - topMargin;
+
+            double maxValue = 1;
+            double minValue = 0;
+            for (double value : values) {
+                if (value > maxValue) {
+                    maxValue = value;
+                }
+            }
+            double range = Math.max(1, maxValue - minValue);
+
+            int pointCount = values.size();
+            int stepX = (width - 20) / (pointCount - 1);
+
+            int[] xPoints = new int[pointCount];
+            int[] yPoints = new int[pointCount];
+            for (int i = 0; i < pointCount; i++) {
+                xPoints[i] = 10 + i * stepX;
+                double normalised = (values.get(i) - minValue) / range;
+                yPoints[i] = topMargin + (int) Math.round((1 - normalised) * chartHeight);
+            }
+
+            g2.setColor(lineColor);
+            g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            for (int i = 0; i < pointCount - 1; i++) {
+                g2.drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
+            }
+            for (int i = 0; i < pointCount; i++) {
+                g2.fillOval(xPoints[i] - 3, yPoints[i] - 3, 6, 6);
+            }
+
+            g2.setColor(COLOR_MUTED);
+            for (int i = 0; i < pointCount; i++) {
+                g2.drawString(labels.get(i), xPoints[i] - 10, height - 4);
+            }
+            g2.dispose();
+        }
+    }
+
+    /** A simple pie chart with a coloured legend, built from a category -> count map. */
+    static class PieChartPanel extends JComponent {
+        private static final Color[] SLICE_COLORS = {
+                COLOR_ACCENT, COLOR_BLUE, COLOR_WARNING, COLOR_DANGER, COLOR_MUTED
+        };
+        private final Map<String, Integer> segments;
+
+        PieChartPanel(Map<String, Integer> segments) {
+            this.segments = segments;
+            setPreferredSize(new Dimension(320, 170));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (segments.isEmpty()) {
+                g2.setColor(COLOR_MUTED);
+                g2.drawString("No data yet", 10, getHeight() / 2);
+                g2.dispose();
+                return;
+            }
+
+            // UNIT 1: a for loop totals up every count so each slice's share can be worked out.
+            int total = 0;
+            for (int count : segments.values()) {
+                total += count;
+            }
+
+            int diameter = Math.min(getHeight() - 10, 140);
+            int pieX = 10;
+            int pieY = (getHeight() - diameter) / 2;
+
+            double startAngle = 90;
+            int colorIndex = 0;
+            int legendY = 14;
+            int legendX = pieX + diameter + 24;
+
+            for (Map.Entry<String, Integer> entry : segments.entrySet()) {
+                double share = total == 0 ? 0 : (entry.getValue() / (double) total);
+                double sweepAngle = share * 360;
+                Color sliceColor = SLICE_COLORS[colorIndex % SLICE_COLORS.length];
+
+                g2.setColor(sliceColor);
+                g2.fill(new Arc2D.Double(pieX, pieY, diameter, diameter, startAngle, -sweepAngle, Arc2D.PIE));
+                startAngle -= sweepAngle;
+
+                g2.setColor(sliceColor);
+                g2.fillRect(legendX, legendY, 10, 10);
+                g2.setColor(COLOR_TEXT);
+                g2.drawString(entry.getKey() + " (" + entry.getValue() + ")", legendX + 16, legendY + 10);
+                legendY += 20;
+                colorIndex++;
+            }
+            g2.dispose();
         }
     }
 }
