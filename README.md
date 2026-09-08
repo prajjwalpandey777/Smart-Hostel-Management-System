@@ -1,82 +1,101 @@
 # 🏠 Smart Hostel Management System
 
-<div align="center">
+## 📖 Overview
 
-### ✨ Standalone Java Swing Desktop Application
+The Smart Hostel Management System is a desktop application developed using Java Swing to simplify hostel administration. It combines all important hostel activities into one application, allowing administrators to manage students, rooms, fees, attendance, complaints, visitors, mess plans, leave requests, inventory, staff, notices, and reports through a single dashboard.
 
-![Java](https://img.shields.io/badge/Java-8%2B-1f6feb?style=for-the-badge&logo=openjdk&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows%20Desktop-2ea44f?style=for-the-badge)
-![UI](https://img.shields.io/badge/UI-Java%20Swing-8250df?style=for-the-badge)
+The application is developed as a single Java source file (`Main.java`) and provides a modern graphical user interface using Java Swing. It also includes automatic room allocation, payment receipt generation, visitor pass generation, dashboard statistics, CSV export, activity logging, and JDBC-ready support for future MySQL integration.
 
-</div>
-
-## 🌟 Overview
-
-Smart Hostel Management System is a single-file Java Swing desktop application designed to organize common college hostel activities in one place. It manages students, rooms, fees, complaints, visitors, attendance, mess plans, outpasses, inventory, notices, staff, reports, and settings through one modern desktop interface.
+---
 
 ## ✨ Features
 
-| Module | Main capabilities |
-|---|---|
-| 🎓 **Students** | Add, edit, delete, search, view profile, and assign rooms |
-| 🛏️ **Rooms** | Capacity, occupancy, available beds, status, and auto allocation |
-| 💳 **Fees** | Fee collection, pending payment tracking, receipt preview, and CSV export |
-| 🛠️ **Complaints** | Register, assign teams, update status, and track resolution |
-| 👤 **Visitors** | Entry/exit records and visitor-pass preview |
-| 🕒 **Attendance** | Entry time, exit time, late-entry status, and reports |
-| 🍽️ **Operations** | Mess, outpass, inventory, notices, staff, reports, and settings |
-| 📊 **Dashboard** | Statistics, charts, activity, quick actions, and visitor overview |
+- Secure Administrator Login
+- Interactive Dashboard with Statistics
+- Student Management
+- Room Management
+- Automatic Room Allocation
+- Fee Management
+- Payment Receipt Generation
+- Complaint Management
+- Visitor Management
+- Visitor Pass Generation
+- Attendance Management
+- Mess & Meal Management
+- Leave & Outpass Management
+- Inventory Management
+- Notice Board
+- Staff Management
+- Reports Module
+- CSV Export
+- Activity Log
+- Settings Module
+- JDBC-Ready Database Support
 
-> ✅ Includes validation, table search, editable live records, scrolling navigation, and CSV export.
+---
 
-## 💻 Technologies and tools used
+## 🛠 Technologies / Tools Used
 
-- Java 8 or later
-- Java Swing and AWT for the graphical user interface
-- JDBC API for MySQL-ready database connectivity
-- Java Collections Framework (`ArrayList`, `Vector`, `Stack`, `Map`)
-- Java I/O streams for CSV export and file handling
-- Multithreading, exception handling, reflection, annotations, and object-oriented programming
+- Java 8+
+- Java Swing
+- Java AWT
+- JDBC API
+- Java Collections Framework
+- Java File I/O
+- Object-Oriented Programming (OOP)
+- Multithreading
+- JTable & DefaultTableModel
+- CardLayout
+- TableRowSorter
+- MySQL Ready Architecture
 
-## 🚀 Installation and running
+---
 
-### 📋 Prerequisites
+## 🚀 Steps to Install & Run the Project
 
-- JDK 8 or later installed on Windows
-- Optional: MySQL Server and MySQL Connector/J for permanent database storage
+### Prerequisites
 
-### ▶️ Steps
+- Java Development Kit (JDK 8 or above)
+- Windows Operating System
 
-1. Open PowerShell in the folder containing `Main.java`.
-2. Compile the application:
+### Compile
 
-   ```powershell
-   javac -encoding UTF-8 Main.java
-   ```
+```bash
+javac -encoding UTF-8 Main.java
+```
 
-3. Run the application:
+### Run
 
-   ```powershell
-   java Main
-   ```
+```bash
+java Main
+```
 
-4. Sign in using the demo credentials:
+### Demo Login
 
-   ```text
-   Email: admin@hostel.com
-   Password: admin
-   ```
+```
+Email: admin@hostel.com
+Password: admin
+```
 
-## 🧪 Testing instructions
+---
 
-1. Open **Students** and verify the sample student records are shown.
-2. Add a student, edit the selected row, and delete a row to test CRUD operations.
-3. Search for a student name to test table filtering.
-4. Use **Export CSV** and verify that the saved file contains the current records.
-5. Test **Auto Allocate** in Rooms.
-6. Test the receipt preview in Fees and visitor pass preview in Visitors.
-7. Resize the application and verify that the sidebar, dashboard, and tables can be scrolled.
-8. Open **Settings → Syllabus Concepts** to view Java concept demonstrations.
+## 🧪 Instructions for Testing
+
+1. Launch the application and log in using the demo credentials.
+2. Verify that the dashboard opens successfully.
+3. Add, edit, search, and delete student records.
+4. Add and manage room details.
+5. Test automatic room allocation.
+6. Record fee payments and verify receipt generation.
+7. Register complaints and update their status.
+8. Add visitor records and generate visitor passes.
+9. Record attendance with entry and exit times.
+10. Manage mess plans, leave requests, inventory, notices, and staff records.
+11. Generate reports and export table data as CSV files.
+12. Open the Settings module and verify available options.
+13. Resize the application window and verify that all modules remain accessible.
+
+---
 
 ## 📸 Screenshots
 
